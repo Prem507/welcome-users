@@ -35,6 +35,15 @@ h1, h2, h3, p, label {
     padding: 10px;
     border-radius: 10px;
 }
+
+/* -------- TOAST POPUP FIX -------- */
+div[data-testid="stToast"] {
+    background-color: #38bdf8 !important;  /* popup background */
+}
+div[data-testid="stToast"] * {
+    color: black !important;               /* popup text color */
+    font-weight: 700;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -48,9 +57,6 @@ def load_model():
     return YOLO("best.pt")
 
 model = load_model()
-
-# (Optional) show class names once for debugging
-# st.write("Model Classes:", model.names)
 
 # ---------------- INPUT TYPE ----------------
 option = st.radio(
@@ -72,7 +78,6 @@ if option == "Image Upload":
         image = Image.open(uploaded_image).convert("RGB")
         img_array = np.array(image)
 
-        # YOLO prediction
         results = model(img_array)
         annotated = results[0].plot()
 
@@ -82,7 +87,6 @@ if option == "Image Upload":
             use_container_width=True
         )
 
-        # -------- CORRECT LOGIC USING CLASS NAMES --------
         helmet_detected = False
         no_helmet_detected = False
 
