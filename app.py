@@ -49,14 +49,20 @@ def load_model():
 
 model = load_model()
 
+# (Optional) show class names once for debugging
+# st.write("Model Classes:", model.names)
+
 # ---------------- INPUT TYPE ----------------
 option = st.radio(
     "Select input type",
     ("Image Upload", "Video Upload")
 )
 
-# ---------------- IMAGE UPLOAD ----------------
+# =====================================================
+# ================= IMAGE UPLOAD ======================
+# =====================================================
 if option == "Image Upload":
+
     uploaded_image = st.file_uploader(
         "Upload Image",
         type=["jpg", "jpeg", "png"]
@@ -66,20 +72,46 @@ if option == "Image Upload":
         image = Image.open(uploaded_image).convert("RGB")
         img_array = np.array(image)
 
+        # YOLO prediction
         results = model(img_array)
         annotated = results[0].plot()
 
-        st.image(annotated, caption="Detection Result", use_container_width=True)
+        st.image(
+            annotated,
+            caption="Detection Result",
+            use_container_width=True
+        )
 
-        classes = results[0].boxes.cls.tolist() if results[0].boxes else []
+        # -------- CORRECT LOGIC USING CLASS NAMES --------
+        helmet_detected = False
+        no_helmet_detected = False
 
-        if 0 in classes:   # change class ID if required
+        if results[0].boxes is not None:
+            for cls_id in results[0].boxes.cls.tolist():
+                class_name = model.names[int(cls_id)].lower()
+
+                if "without" in class_name or "no helmet" in class_name:
+                    no_helmet_detected = True
+                if "helmet" in class_name and "without" not in class_name:
+                    helmet_detected = True
+
+        # -------- ALERT + POPUP --------
+        if no_helmet_detected:
             st.error("🚨 ALERT: Helmet NOT detected")
-        else:
-            st.success("✅ Helmet detected")
+            st.toast("🚨 Helmet NOT detected!", icon="🚨")
 
-# ---------------- VIDEO UPLOAD ----------------
+        elif helmet_detected:
+            st.success("✅ Helmet detected")
+            st.toast("✅ Helmet detected", icon="🪖")
+
+        else:
+            st.info("ℹ️ No rider detected")
+
+# =====================================================
+# ================= VIDEO UPLOAD ======================
+# =====================================================
 if option == "Video Upload":
+
     uploaded_video = st.file_uploader(
         "Upload Video",
         type=["mp4", "avi", "mov"]
@@ -90,7 +122,6 @@ if option == "Video Upload":
         tfile.write(uploaded_video.read())
 
         cap = cv2.VideoCapture(tfile.name)
-
         stframe = st.empty()
 
         while cap.isOpened():
@@ -101,7 +132,11 @@ if option == "Video Upload":
             results = model(frame)
             annotated = results[0].plot()
 
-            stframe.image(annotated, channels="BGR", use_container_width=True)
+            stframe.image(
+                annotated,
+                channels="BGR",
+                use_container_width=True
+            )
 
         cap.release()
         os.unlink(tfile.name)
