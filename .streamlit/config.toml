@@ -1,5 +1,2 @@
 [server]
 enableCORS = false
-
-[python]
-pythonVersion = "3.10"
